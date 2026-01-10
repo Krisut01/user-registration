@@ -40,18 +40,16 @@ RUN echo "ServerName user-registration-w4es.onrender.com" >> /etc/apache2/apache
 # Configure Apache DocumentRoot
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
-# Configure Apache to listen on dynamic port
-RUN sed -i 's/Listen 80/Listen ${PORT:-80}/g' /etc/apache2/ports.conf
-RUN sed -i 's/:80/:${PORT:-80}/g' /etc/apache2/sites-available/000-default.conf
+# Configure Apache for Render (use fixed port 8080)
+RUN sed -i 's/Listen 80/Listen 8080/g' /etc/apache2/ports.conf
+RUN sed -i 's/:80/:8080/g' /etc/apache2/sites-available/000-default.conf
 
-# Expose port (Render will set PORT env var)
-EXPOSE 10000
+# Expose port 8080 (Render will handle the mapping)
+EXPOSE 8080
 
 # Health check for Render
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-80}/ || exit 1
+    CMD curl -f http://localhost:8080/ || exit 1
 
-# Start Apache
-CMD sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf && \
-    sed -i "s/80/$PORT/g" /etc/apache2/ports.conf && \
-    apache2-foreground
+# Start Apache (Render handles port mapping automatically)
+CMD apache2-foreground
