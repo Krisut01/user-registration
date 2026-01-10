@@ -1,7 +1,7 @@
 # Laravel Dockerfile with Apache for production
 FROM php:8.3-apache
 
-# Install system dependencies and Node.js
+# Install system dependencies and Node.js (latest LTS)
 RUN apt-get update && apt-get install -y \
     curl \
     libpng-dev \
@@ -11,9 +11,11 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     zip \
     unzip \
-    nodejs \
-    npm \
     && docker-php-ext-install pdo_pgsql pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# Install Node.js 18 LTS (more compatible with modern packages)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs
 
 # Install Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer 
@@ -30,16 +32,19 @@ RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interactio
 # Copy application code
 COPY . .
 
-# Install Node.js dependencies and build assets
-RUN npm install && npm run build && ls -la public/build/ && echo "Build completed successfully"
+# Install Node.js dependencies and build assets with verbose logging
+RUN npm --version && node --version && \
+    npm install --verbose && \
+    npm run build --verbose && \
+    echo "=== Build completed successfully ===" && \
+    ls -la public/build/ && \
+    echo "=== Checking manifest ===" && \
+    cat public/build/manifest.json
 
-# Verify Laravel configuration
-RUN php artisan config:cache && echo "Laravel config cached successfully"
-
-# Set permissions for storage and bootstrap cache
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 755 /var/www/html/public/build
+# Set permissions and ensure build directory exists
+RUN mkdir -p /var/www/html/public/build && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/build
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite

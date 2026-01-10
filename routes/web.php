@@ -31,3 +31,19 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
+
+// Debug route to check asset loading (remove in production)
+Route::get('/debug-assets', function () {
+    $manifestPath = public_path('build/manifest.json');
+    $cssExists = file_exists(public_path('css/app.css'));
+    $jsExists = file_exists(public_path('js/app.js'));
+
+    return response()->json([
+        'manifest_exists' => file_exists($manifestPath),
+        'css_exists' => $cssExists,
+        'js_exists' => $jsExists,
+        'environment' => app()->environment(),
+        'manifest_content' => file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : null,
+        'build_directory' => scandir(public_path('build')),
+    ]);
+});
