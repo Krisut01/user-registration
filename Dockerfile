@@ -1,9 +1,8 @@
-# Simple and fast Laravel Docker setup
-FROM php:8.1-apache
+# Laravel Dockerfile with Apache for production
+FROM php:8.3-apache
 
-# Install system dependencies and PHP extensions
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
     curl \
     libpng-dev \
     libonig-dev \
@@ -11,9 +10,7 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
@@ -21,73 +18,40 @@ COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for better caching
+# Copy composer files
 COPY composer.json composer.lock ./
 
-# Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev --no-scripts
+# Install PHP dependencies (production only)
+RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
 
 # Copy application code
 COPY . .
 
-# Generate application key
-RUN php artisan key:generate
-
-# Set proper permissions
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Enable Apache rewrite module
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
 # Configure Apache
-RUN echo '<VirtualHost *:80>\n\
-    DocumentRoot /var/www/html/public\n\
-    <Directory /var/www/html/public>\n\
-        AllowOverride All\n\
-        Require all granted\n\
-    </Directory>\n\
-    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
-    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+RUN echo "ServerName user-registration-w4es.onrender.com" >> /etc/apache2/apache2.conf
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "Starting Laravel application..."\n\
-\n\
-# Wait for database to be ready\n\
-echo "Waiting for database connection..."\n\
-attempts=0\n\
-max_attempts=30\n\
-\n\
-while [ $attempts -lt $max_attempts ]; do\n\
-    if php artisan migrate:status > /dev/null 2>&1; then\n\
-        echo "Database is ready! Running migrations..."\n\
-        php artisan migrate --force\n\
-        echo "Caching configuration..."\n\
-        php artisan config:cache\n\
-        php artisan route:cache\n\
-        php artisan view:cache\n\
-        echo "Starting Apache..."\n\
-        apache2-foreground\n\
-        exit 0\n\
-    fi\n\
-    echo "Database not ready, attempt $((attempts+1))/$max_attempts..."\n\
-    sleep 2\n\
-    attempts=$((attempts+1))\n\
-done\n\
-\n\
-echo "Database connection failed after $max_attempts attempts"\n\
-echo "Starting Apache anyway (migrations may fail)..."\n\
-apache2-foreground' > /usr/local/bin/start.sh
+# Configure Apache DocumentRoot
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
-RUN chmod +x /usr/local/bin/start.sh
+# Configure Apache to listen on dynamic port
+RUN sed -i 's/Listen 80/Listen ${PORT:-80}/g' /etc/apache2/ports.conf
+RUN sed -i 's/:80/:${PORT:-80}/g' /etc/apache2/sites-available/000-default.conf
 
-# Expose port
-EXPOSE 80
+# Expose port (Render will set PORT env var)
+EXPOSE 10000
 
-# Start the application
-CMD ["/usr/local/bin/start.sh"]
+# Health check for Render
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-80}/ || exit 1
+
+# Start Apache
+CMD sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf && \
+    sed -i "s/80/$PORT/g" /etc/apache2/ports.conf && \
+    apache2-foreground
