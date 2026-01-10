@@ -1,7 +1,7 @@
 # Laravel Dockerfile with Apache for production
 FROM php:8.3-apache
 
-# Install system dependencies
+# Install system dependencies and Node.js
 RUN apt-get update && apt-get install -y \
     curl \
     libpng-dev \
@@ -11,10 +11,12 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     zip \
     unzip \
+    nodejs \
+    npm \
     && docker-php-ext-install pdo_pgsql pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Composer
-COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer 
 
 # Set working directory
 WORKDIR /var/www/html
@@ -27,6 +29,9 @@ RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interactio
 
 # Copy application code
 COPY . .
+
+# Install Node.js dependencies and build assets
+RUN npm install && npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
