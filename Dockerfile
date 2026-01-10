@@ -31,11 +31,15 @@ RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interactio
 COPY . .
 
 # Install Node.js dependencies and build assets
-RUN npm install && npm run build
+RUN npm install && npm run build && ls -la public/build/ && echo "Build completed successfully"
 
-# Set permissions
+# Verify Laravel configuration
+RUN php artisan config:cache && echo "Laravel config cached successfully"
+
+# Set permissions for storage and bootstrap cache
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 755 /var/www/html/public/build
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
