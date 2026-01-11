@@ -17,17 +17,8 @@
     <!-- Font Awesome CDN fallback -->
     <link href="https://use.fontawesome.com/releases/v6.0.0/css/all.css" rel="stylesheet">
 
-    <!-- Vite Assets -->
+    <!-- Load compiled assets with Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
-    <!-- Debug: Asset Configuration (Remove after fixing) -->
-    @if(config('app.debug'))
-    <script>
-        console.log('Environment:', '{{ config('app.env') }}');
-        console.log('Asset URL:', '{{ config('app.asset_url') ?? 'Not Set' }}');
-        console.log('App URL:', '{{ config('app.url') }}');
-    </script>
-    @endif
     @stack('styles')
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">

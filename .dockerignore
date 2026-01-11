@@ -16,3 +16,10 @@ storage/framework/views/*
 storage/logs/*
 tests
 .phpunit.result.cache
+# Keep these files - they're needed for building
+!package.json
+!package-lock.json
+!vite.config.js
+!tailwind.config.js
+!postcss.config.js
+!resources/

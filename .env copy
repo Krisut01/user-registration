@@ -3,7 +3,6 @@ APP_ENV=production
 APP_KEY=base64:d6nkLUQajXxjLX1mkZJcozXT3DtcOYyegK5IX5VY21o=
 APP_DEBUG=false
 APP_URL=https://user-registration-w4es.onrender.com
-ASSET_URL=https://user-registration-w4es.onrender.com
 
 APP_LOCALE=en
 APP_FALLBACK_LOCALE=en

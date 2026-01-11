@@ -15,8 +15,10 @@ export default defineConfig({
             output: {
                 manualChunks: undefined,
             }
-        }
+        },
+        assetsDir: 'assets',
+        chunkSizeWarningLimit: 1000,
+        minify: 'esbuild',
+        target: 'es2015',
     },
-    // Ensure assets are loaded with correct base URL in production
-    base: process.env.ASSET_URL || '/',
 });
