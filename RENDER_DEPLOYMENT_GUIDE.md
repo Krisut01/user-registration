@@ -16,12 +16,16 @@ This guide explains how to deploy your Laravel application with **TailwindCSS**,
 - ✅ `resources/js/app.js` - Alpine.js & JavaScript
 
 ### 2. **What Was Fixed**
-The Dockerfile has been optimized to:
+The Dockerfile and configuration have been optimized to:
 - ✅ Install Node.js 20 LTS properly
 - ✅ Use `npm ci` for faster, reliable installs
-- ✅ Build frontend assets with Vite
+- ✅ Copy resources before npm install (critical for build)
+- ✅ Fixed package version conflicts (TailwindCSS v3 compatibility)
+- ✅ Removed incompatible packages (`@tailwindcss/vite` v4)
+- ✅ Downgraded to stable versions (Vite 5, Laravel Vite Plugin 1)
+- ✅ Simplified Vite configuration
+- ✅ Added better error handling in build process
 - ✅ Verify build artifacts are created
-- ✅ Set correct permissions
 
 ## 🚀 Render Configuration
 
@@ -125,6 +129,17 @@ Port: `8080` (already configured in Dockerfile)
 - If still happening, check Render's Docker logs
 - Ensure you're using the latest Dockerfile from this update
 
+### Problem: Exit Code 1 Error (Build Fails)
+**Cause**: Vite build failing due to package conflicts or missing files
+
+**Solution**: 
+- ✅ **FIXED**: Updated `package.json` to use compatible versions
+- ✅ **FIXED**: Removed `@tailwindcss/vite` v4 (incompatible with TailwindCSS v3)
+- ✅ **FIXED**: Downgraded to Vite 5 (more stable)
+- ✅ **FIXED**: Resources directory now copied before build
+- Ensure you're using the latest `package.json` and `Dockerfile`
+- Check Render logs for specific error messages from npm/Vite
+
 ### Problem: Icons Not Showing
 **Cause**: FontAwesome not loaded
 
@@ -165,12 +180,20 @@ Whenever you make changes:
 ## 📚 Key Technologies Used
 
 - **Laravel 11**: PHP Framework
-- **TailwindCSS 3**: Utility-first CSS framework
-- **Alpine.js 3**: Lightweight JavaScript framework
-- **Vite 7**: Modern build tool
-- **FontAwesome 7**: Icon library
+- **TailwindCSS 3.4**: Utility-first CSS framework
+- **Alpine.js 3.4**: Lightweight JavaScript framework
+- **Vite 5**: Modern build tool (stable version)
+- **Laravel Vite Plugin 1.0**: Asset bundling
+- **FontAwesome 6.5**: Icon library
 - **PostgreSQL**: Database (Render managed)
 - **Apache**: Web server in Docker
+- **Node.js 20 LTS**: JavaScript runtime
+
+### Version Notes:
+- Using **Vite 5** instead of 7 (better stability with TailwindCSS 3)
+- Using **Laravel Vite Plugin 1.0** (more stable than 2.0)
+- Using **TailwindCSS 3.4** (removed incompatible v4 plugin)
+- Using **FontAwesome 6.5** (v7 doesn't exist yet)
 
 ## 🎨 Asset Pipeline
 

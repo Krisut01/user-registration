@@ -41,23 +41,28 @@ RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interactio
 COPY package*.json ./
 COPY vite.config.js postcss.config.js tailwind.config.js ./
 
+# Copy resources directory (needed for Vite build)
+COPY resources ./resources
+
 # Install Node.js dependencies with legacy peer deps flag for compatibility
 RUN npm ci --legacy-peer-deps --verbose
 
-# Copy application code
+# Copy rest of application code
 COPY . .
 
-# Build frontend assets
-RUN echo "=== Starting Vite build ===" \
-    && npm run build -- --logLevel verbose \
-    && echo "=== Build completed successfully ===" \
-    && ls -la public/build/ \
-    && echo "=== Checking manifest ===" \
-    && cat public/build/manifest.json \
-    && echo "=== Verifying CSS file ===" \
-    && ls -lh public/build/assets/*.css \
-    && echo "=== Verifying JS file ===" \
-    && ls -lh public/build/assets/*.js
+# Build frontend assets with error handling
+RUN echo "=== Starting Vite build ===" && \
+    npm run build 2>&1 || (echo "Build failed! Check errors above." && exit 1) && \
+    echo "=== Build completed successfully ===" && \
+    if [ -f public/build/manifest.json ]; then \
+        echo "=== Manifest found ===" && \
+        cat public/build/manifest.json && \
+        echo "=== Build artifacts ===" && \
+        ls -lh public/build/assets/ ; \
+    else \
+        echo "ERROR: manifest.json not found!" && \
+        exit 1 ; \
+    fi
 
 # Set permissions and ensure build directory exists
 RUN mkdir -p /var/www/html/public/build/assets \

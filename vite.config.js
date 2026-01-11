@@ -9,16 +9,10 @@ export default defineConfig({
         }),
     ],
     build: {
-        manifest: true,
-        outDir: 'public/build',
         rollupOptions: {
             output: {
                 manualChunks: undefined,
             }
-        },
-        assetsDir: 'assets',
-        chunkSizeWarningLimit: 1000,
-        minify: 'esbuild',
-        target: 'es2015',
-    },
+        }
+    }
 });
