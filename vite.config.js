@@ -9,10 +9,14 @@ export default defineConfig({
         }),
     ],
     build: {
+        manifest: true,
+        outDir: 'public/build',
         rollupOptions: {
             output: {
                 manualChunks: undefined,
             }
         }
-    }
+    },
+    // Ensure assets are loaded with correct base URL in production
+    base: process.env.ASSET_URL || '/',
 });

@@ -33,13 +33,21 @@ RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interactio
 COPY . .
 
 # Install Node.js dependencies and build assets with verbose logging
+# Set environment variable for asset building
+ENV NODE_ENV=production
+ENV ASSET_URL=/
+
 RUN npm --version && node --version && \
     npm install --verbose && \
     npm run build --verbose && \
     echo "=== Build completed successfully ===" && \
     ls -la public/build/ && \
     echo "=== Checking manifest ===" && \
-    cat public/build/manifest.json
+    cat public/build/manifest.json && \
+    echo "=== Verifying CSS file ===" && \
+    ls -lh public/build/assets/*.css && \
+    echo "=== Verifying JS file ===" && \
+    ls -lh public/build/assets/*.js
 
 # Set permissions and ensure build directory exists
 RUN mkdir -p /var/www/html/public/build && \

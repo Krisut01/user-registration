@@ -17,17 +17,16 @@
     <!-- Font Awesome CDN fallback -->
     <link href="https://use.fontawesome.com/releases/v6.0.0/css/all.css" rel="stylesheet">
 
-    <!-- Force load compiled assets for production -->
-    @if(app()->environment('production'))
-        @if(file_exists(public_path('build/manifest.json')))
-            @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @else
-            <!-- Fallback if Vite build failed -->
-            <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-            <script src="{{ asset('js/app.js') }}" defer></script>
-        @endif
-    @else
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Vite Assets -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <!-- Debug: Asset Configuration (Remove after fixing) -->
+    @if(config('app.debug'))
+    <script>
+        console.log('Environment:', '{{ config('app.env') }}');
+        console.log('Asset URL:', '{{ config('app.asset_url') ?? 'Not Set' }}');
+        console.log('App URL:', '{{ config('app.url') }}');
+    </script>
     @endif
     @stack('styles')
 </head>
