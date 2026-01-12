@@ -32,18 +32,28 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
 
-// Debug route to check asset loading (remove in production)
+// Debug route to check asset loading
 Route::get('/debug-assets', function () {
     $manifestPath = public_path('build/manifest.json');
-    $cssExists = file_exists(public_path('css/app.css'));
-    $jsExists = file_exists(public_path('js/app.js'));
-
+    $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : null;
+    
+    // Get actual asset URLs that would be generated
+    $cssEntry = $manifest['resources/css/app.css']['file'] ?? null;
+    $jsEntry = $manifest['resources/js/app.js']['file'] ?? null;
+    
+    $appUrl = config('app.url');
+    $assetUrl = $cssEntry ? asset('build/' . $cssEntry) : 'N/A';
+    
     return response()->json([
         'manifest_exists' => file_exists($manifestPath),
-        'css_exists' => $cssExists,
-        'js_exists' => $jsExists,
         'environment' => app()->environment(),
-        'manifest_content' => file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : null,
+        'app_url' => $appUrl,
+        'app_url_env' => env('APP_URL'),
+        'asset_url_example' => $assetUrl,
+        'css_file' => $cssEntry,
+        'js_file' => $jsEntry,
+        'manifest_content' => $manifest,
         'build_directory' => scandir(public_path('build')),
+        'public_path' => public_path(),
     ]);
 });
