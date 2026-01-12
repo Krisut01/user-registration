@@ -17,8 +17,18 @@
     <!-- Font Awesome CDN fallback -->
     <link href="https://use.fontawesome.com/releases/v6.0.0/css/all.css" rel="stylesheet">
 
-    <!-- Load compiled assets with Vite -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Force load compiled assets for production -->
+    @if(app()->environment('production'))
+        @if(file_exists(public_path('build/manifest.json')))
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @else
+            <!-- Fallback if Vite build failed -->
+            <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+            <script src="{{ asset('js/app.js') }}" defer></script>
+        @endif
+    @else
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
     @stack('styles')
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">

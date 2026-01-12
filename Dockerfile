@@ -1,11 +1,9 @@
 # Laravel Dockerfile with Apache for production
 FROM php:8.3-apache
 
-# Install system dependencies
+# Install system dependencies and Node.js (latest LTS)
 RUN apt-get update && apt-get install -y \
     curl \
-    gnupg \
-    ca-certificates \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
@@ -13,17 +11,11 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo_pgsql pdo_mysql mbstring exif pcntl bcmath gd zip \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-install pdo_pgsql pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Install Node.js 20 LTS using official NodeSource setup
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && npm --version \
-    && node --version \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Install Node.js 20 LTS (required for Vite 7 and Laravel Vite Plugin 2)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
 
 # Install Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer 
@@ -31,43 +23,28 @@ COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first (for better Docker layer caching)
+# Copy composer files
 COPY composer.json composer.lock ./
 
 # Install PHP dependencies (production only)
 RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
 
-# Copy package files for npm (for better Docker layer caching)
-COPY package*.json ./
-COPY vite.config.js postcss.config.js tailwind.config.js ./
-
-# Copy resources directory (needed for Vite build)
-COPY resources ./resources
-
-# Install Node.js dependencies with legacy peer deps flag for compatibility
-RUN npm ci --legacy-peer-deps --verbose
-
-# Copy rest of application code
+# Copy application code
 COPY . .
 
-# Build frontend assets with error handling
-RUN echo "=== Starting Vite build ===" && \
-    npm run build 2>&1 || (echo "Build failed! Check errors above." && exit 1) && \
+# Install Node.js dependencies and build assets with verbose logging
+RUN npm --version && node --version && \
+    npm install --legacy-peer-deps && \
+    npm run build && \
     echo "=== Build completed successfully ===" && \
-    if [ -f public/build/manifest.json ]; then \
-        echo "=== Manifest found ===" && \
-        cat public/build/manifest.json && \
-        echo "=== Build artifacts ===" && \
-        ls -lh public/build/assets/ ; \
-    else \
-        echo "ERROR: manifest.json not found!" && \
-        exit 1 ; \
-    fi
+    ls -la public/build/ && \
+    echo "=== Checking manifest ===" && \
+    cat public/build/manifest.json
 
 # Set permissions and ensure build directory exists
-RUN mkdir -p /var/www/html/public/build/assets \
-    && chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/build
+RUN mkdir -p /var/www/html/public/build && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/build
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
