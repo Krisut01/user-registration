@@ -4,7 +4,7 @@ set -e
 PORT="${PORT:-8080}"
 SERVER_NAME="${SERVER_NAME:-user-registration-t2f4.onrender.com}"
 
-# Configure Apache to honor runtime port and server name
+# Configure Apache
 sed -i "s/Listen [0-9]*/Listen ${PORT}/" /etc/apache2/ports.conf
 sed -i "s/<VirtualHost \*:.*>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 
@@ -14,7 +14,12 @@ else
   echo "ServerName ${SERVER_NAME}" >> /etc/apache2/apache2.conf
 fi
 
-# Clear stale caches that may be baked into the image
+# Generate APP_KEY if missing (critical for Render)
+if [ -z "$APP_KEY" ]; then
+  php artisan key:generate --force
+fi
+
+# Clear stale caches
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear

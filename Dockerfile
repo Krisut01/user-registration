@@ -30,14 +30,20 @@ COPY composer.json composer.lock ./
 RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
 
 # Install Node deps early for cache reuse
-COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps --include=optional
+# Don't copy package-lock.json to avoid Windows/Linux platform mismatch
+# Fresh install will generate correct Linux binaries for rollup/vite
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
 # Copy application code
 COPY . .
 
 # Remove any baked caches from local dev
 RUN rm -f bootstrap/cache/*.php
+
+# Remove Windows-generated package-lock.json to avoid platform conflicts
+# Use the node_modules installed above (Linux binaries)
+RUN rm -f package-lock.json
 
 # Build frontend assets
 RUN npm run build
@@ -53,7 +59,7 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available
 
 # Start script will set the port and server name at runtime
 COPY docker/start.sh /usr/local/bin/start-container
-RUN chmod +x /usr/local/bin/start-container
+RUN sed -i 's/\r$//' /usr/local/bin/start-container && chmod +x /usr/local/bin/start-container
 
 # Expose default Render port (overridden at runtime if needed)
 EXPOSE 8080
@@ -61,4 +67,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8080}/ || exit 1
 
-CMD ["start-container"]
+CMD ["/usr/local/bin/start-container"]
