@@ -39,8 +39,13 @@ RUN a2enmod rewrite
 # Configure Apache
 RUN echo "ServerName user-registration-w4es.onrender.com" >> /etc/apache2/apache2.conf
 
-# Configure Apache DocumentRoot
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# Configure Apache DocumentRoot and Directory permissions
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf && \
+    echo '<Directory /var/www/html/public>' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    Options Indexes FollowSymLinks' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    AllowOverride All' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    Require all granted' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '</Directory>' >> /etc/apache2/sites-available/000-default.conf
 
 # Configure Apache for Render (use fixed port 8080)
 RUN sed -i 's/Listen 80/Listen 8080/g' /etc/apache2/ports.conf
