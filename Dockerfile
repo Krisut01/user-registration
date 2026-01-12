@@ -15,10 +15,13 @@ RUN apt-get update && apt-get install -y \
 
 # Install Node.js 20 LTS (required for Vite 7 and Laravel Vite Plugin 2)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs
+    apt-get install -y nodejs && \
+    ln -sf /usr/bin/node /usr/local/bin/node && \
+    ln -sf /usr/bin/npm /usr/local/bin/npm && \
+    ln -sf /usr/bin/npx /usr/local/bin/npx
 
 # Install Composer
-COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer 
+COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www/html
