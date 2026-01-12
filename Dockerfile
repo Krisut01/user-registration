@@ -31,7 +31,7 @@ RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interactio
 
 # Install Node deps early for cache reuse
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --include=optional
 
 # Copy application code
 COPY . .
