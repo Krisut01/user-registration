@@ -1,7 +1,7 @@
 # Laravel Dockerfile with Apache for production
 FROM php:8.3-apache
 
-# Install system dependencies and Node.js (latest LTS)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     libpng-dev \
@@ -12,13 +12,6 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     && docker-php-ext-install pdo_pgsql pdo_mysql mbstring exif pcntl bcmath gd zip
-
-# Install Node.js 20 LTS (required for Vite 7 and Laravel Vite Plugin 2)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    ln -sf /usr/bin/node /usr/local/bin/node && \
-    ln -sf /usr/bin/npm /usr/local/bin/npm && \
-    ln -sf /usr/bin/npx /usr/local/bin/npx
 
 # Install Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
@@ -35,17 +28,7 @@ RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interactio
 # Copy application code
 COPY . .
 
-# Install Node.js dependencies and build assets with verbose logging
-RUN npm --version && node --version && \
-    rm -rf node_modules package-lock.json && \
-    npm install --legacy-peer-deps && \
-    npm run build && \
-    echo "=== Build completed successfully ===" && \
-    ls -la public/build/ && \
-    echo "=== Checking manifest ===" && \
-    cat public/build/manifest.json
-
-# Set permissions and ensure build directory exists
+# Ensure build directory exists and has correct permissions
 RUN mkdir -p /var/www/html/public/build && \
     chown -R www-data:www-data /var/www/html && \
     chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/build
