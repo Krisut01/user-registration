@@ -37,6 +37,7 @@ COPY . .
 
 # Install Node.js dependencies and build assets with verbose logging
 RUN npm --version && node --version && \
+    rm -rf node_modules package-lock.json && \
     npm install --legacy-peer-deps && \
     npm run build && \
     echo "=== Build completed successfully ===" && \
