@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Trust Render's proxy to detect HTTPS correctly
+        $middleware->trustProxies(at: '*');
+        // Force HTTPS scheme when behind proxy
+        $middleware->trustHosts(at: ['*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

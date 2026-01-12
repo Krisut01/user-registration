@@ -22,6 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Force HTTPS for asset URLs when APP_URL is HTTPS (for Render/proxy environments)
+        if (config('app.url') && str_starts_with(config('app.url'), 'https://')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+        
         // Performance optimization: eager load user count
         \App\Models\User::observe(new class {
             public function retrieved($model) {
